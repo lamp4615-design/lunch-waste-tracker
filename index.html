@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光盤小超人・廚餘減量大作戰</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- 頂部標題區 -->
+    <header class="header">
+        <div class="container">
+            <h1>🦸 光盤小超人・廚餘減量大作戰</h1>
+            <p class="school-name">台中市大安區大安國民小學</p>
+            <p class="subtitle">適量取餐，珍惜食物 ♻️</p>
+            <div class="last-update">資料更新時間：<span id="updateTime">--</span></div>
+        </div>
+    </header>
+
+    <!-- 主要內容 -->
+    <main class="container">
+        <!-- Tab 導航 -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="leaderboard">🏆 進步排行榜</button>
+            <button class="tab-btn" data-tab="progress-chart">📈 進步率圖表</button>
+            <button class="tab-btn" data-tab="records">📊 詳細紀錄</button>
+            <button class="tab-btn" data-tab="guide">📖 活動說明</button>
+        </div>
+
+        <!-- Tab 1: 進步排行榜 -->
+        <div id="leaderboard" class="tab-content active">
+            <div class="leaderboard">
+                <h2>🎯 「惜食進步王」排行</h2>
+                <table id="statsTable">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>班級</th>
+                            <th>年級</th>
+                            <th>進步率</th>
+                            <th>第一次 → 最後一次</th>
+                            <th>狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsBody">
+                        <tr><td colspan="6" class="loading">⏳ 載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 2: 進步率圖表 -->
+        <div id="progress-chart" class="tab-content">
+            <div class="chart-container">
+                <h2>📈 各班進步率視覺化對比</h2>
+                <div class="chart-wrapper">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 班級進度卡片 -->
+            <div class="class-cards-grid" id="classCardsContainer">
+                <p class="loading">⏳ 載入中...</p>
+            </div>
+        </div>
+
+        <!-- Tab 3: 詳細紀錄 -->
+        <div id="records" class="tab-content">
+            <div class="filters">
+                <input type="text" id="filterClass" placeholder="🔍 搜尋班級...">
+                <select id="filterGrade">
+                    <option value="">🎓 所有年級</option>
+                    <option value="一年級">一年級</option>
+                    <option value="二年級">二年級</option>
+                    <option value="三年級">三年級</option>
+                    <option value="四年級">四年級</option>
+                    <option value="五年級">五年級</option>
+                    <option value="六年級">六年級</option>
+                </select>
+            </div>
+
+            <table id="recordsTable">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>班級</th>
+                        <th>年級</th>
+                        <th>抽測餐點</th>
+                        <th>班級人數</th>
+                        <th>廚餘重量 (g)</th>
+                        <th>每人平均 (g)</th>
+                    </tr>
+                </thead>
+                <tbody id="recordsBody">
+                    <tr><td colspan="7" class="loading">⏳ 載入中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 4: 活動說明 -->
+        <div id="guide" class="tab-content">
+            <div class="guide-card">
+                <h2>🦸 光盤小超人的三個任務</h2>
+                <div class="mission-grid">
+                    <div class="mission-card">
+                        <div class="mission-number">①</div>
+                        <h3>吃多少，拿多少</h3>
+                        <p>先估計自己的食量，不要貪心拿太多！</p>
+                    </div>
+                    <div class="mission-card">
+                        <div class="mission-number">②</div>
+                        <h3>不夠吃，再來添</h3>
+                        <p>少了再加，比一次拿太多浪費更聰明。</p>
+                    </div>
+                    <div class="mission-card">
+                        <div class="mission-number">③</div>
+                        <h3>珍惜食物，不浪費</h3>
+                        <p>能吃完的食物不要丟棄，愛護地球！</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="guide-card">
+                <h2>📈 進步排行的計算方式</h2>
+                <p><strong>進步率 = (第一次 - 最後一次) ÷ 第一次 × 100%</strong></p>
+                <p>例如：某班第一次每人 30g，最後一次 20g</p>
+                <p>進步率 = (30 - 20) ÷ 30 × 100% = <strong style="color: #ff6b6b;">33.3%</strong> ✨</p>
+            </div>
+
+            <div class="guide-card">
+                <h2>💡 你知道嗎？</h2>
+                <ul style="text-align: left; line-height: 1.8;">
+                    <li>🌾 臺灣每年約產生 200 萬公噸食物廚餘</li>
+                    <li>♻️ 減少廚餘，就是珍惜地球資源</li>
+                    <li>🍽️ 學校營養午餐是學習惜食的最好機會</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="footer">
+        <p>💚 光盤小超人・廚餘減量大作戰 | 台中市大安區大安國民小學 | 讓我們一起珍惜食物，愛護地球</p>
+    </footer>
+
+    <script src="js/classConfig.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
