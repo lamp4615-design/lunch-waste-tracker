@@ -11,7 +11,10 @@ lunch-waste-tracker/
 │   └── style.css       樣式
 ├── js/
 │   ├── classConfig.js  班級 emoji / 顏色 / 年級配置
-│   └── main.js         資料載入、Tab 切換、表格與圖表渲染邏輯
+│   ├── main.js         資料載入、Tab 切換、表格與圖表渲染邏輯
+│   └── record.js        「現場紀錄」表單邏輯（年級/班級連動、送出秤重紀錄）
+├── gas/
+│   └── Code.gs          Google Apps Script 後端（試算表讀寫、API）
 └── README.md
 ```
 
@@ -37,8 +40,21 @@ npx serve .
 const API_URL = "https://script.google.com/macros/d/YOUR_DEPLOYMENT_ID/usercopy?action=";
 ```
 
-API 需支援以下三個 action，並回傳 JSON：
+API 需支援以下 GET action，並回傳 JSON：
 
 - `getRecords`：每筆抽測紀錄陣列（含 日期、班級、年級、抽測餐點、班級人數、廚餘重量(g)、每人平均(g)）
 - `getStats`：各班統計陣列（含 班級、年級、進步率(%)、第一次平均(g)、最後一次平均(g)）
 - `getConfig`：設定物件（含 更新時間）
+- `getClasses`：全校班級清單（含 班級、年級）
+
+以及一個 POST action，供「現場紀錄」表單登記秤重資料：
+
+- `addRecord`：body 為 JSON 字串 `{ action: "addRecord", date, className, grade, dish, people, waste }`，成功回傳 `{ success: true, record: {...} }`
+
+## 後端部署（Google Apps Script）
+
+1. 開啟 Apps Script 專案，將 [gas/Code.gs](gas/Code.gs) 的內容貼上取代原本的程式碼。
+2. 執行一次 `initializeSheets`，會自動建立/重建「設定檔」「班級清單」「班級統計」「秤重紀錄表」四張工作表。
+   - 「班級清單」會自動產生全校 12 個班級：一～六年級，每年級僅「甲班」「乙班」，與前端 [js/classConfig.js](js/classConfig.js) 的班級名稱一致。
+3. 部署為網頁應用程式（執行身分：我；存取權限：任何人），取得 `.../exec` 網址。
+4. 將該網址填入 [js/main.js](js/main.js) 的 `API_URL`（記得保留結尾的 `?action=`）。「現場紀錄」表單會自動以同一網址（去掉 `?action=`）送出 POST 請求。
