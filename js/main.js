@@ -43,6 +43,7 @@ async function loadAllData() {
             config['更新時間'] || new Date().toLocaleString('zh-TW');
 
         displayStats(stats);
+        displayDivisionRankings(stats);
         displayProgressChart(stats);
         displayClassCards(stats);
         displayRecords(records);
@@ -104,6 +105,74 @@ function displayStats(stats) {
             </tr>
         `;
         tbody.innerHTML += row;
+    });
+}
+
+// ========== 低／中／高年級分組排行 ==========
+function displayDivisionRankings(stats) {
+    const container = document.getElementById('divisionContainer');
+    container.innerHTML = '';
+
+    if (!stats || stats.length === 0) {
+        container.innerHTML = '<p class="loading">尚無資料</p>';
+        return;
+    }
+
+    DIVISION_ORDER.forEach(division => {
+        const groupStats = stats.filter(s => getDivision(s['年級']) === division);
+        if (groupStats.length === 0) return;
+
+        const sorted = [...groupStats].sort((a, b) => {
+            const progressA = parseFloat(a['進步率(%)']) || 0;
+            const progressB = parseFloat(b['進步率(%)']) || 0;
+            return progressB - progressA;
+        });
+
+        const info = DIVISION_INFO[division];
+
+        let rows = '';
+        sorted.forEach((stat, index) => {
+            const classInfo = getClassInfo(stat['班級']);
+            const isWinner = index === 0;
+            const progress = parseFloat(stat['進步率(%)']) || 0;
+
+            rows += `
+                <tr class="${isWinner ? 'division-winner' : ''}">
+                    <td><strong>${isWinner ? '🏆' : index + 1}</strong></td>
+                    <td>
+                        <span class="class-badge" style="background: ${classInfo.color}">
+                            ${classInfo.emoji} ${stat['班級']}
+                        </span>
+                    </td>
+                    <td>${stat['年級']}</td>
+                    <td>${progress}%</td>
+                    <td>${stat['第一次平均(g)']}g → ${stat['最後一次平均(g)']}g</td>
+                    <td>${isWinner ? '<span class="award-badge">🎁 惜食獎勵</span>' : '—'}</td>
+                </tr>
+            `;
+        });
+
+        const card = `
+            <div class="division-card" style="border-top-color: ${info.color}">
+                <h3>${info.emoji} ${division}排行<span class="division-count">共 ${sorted.length} 班</span></h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>名次</th>
+                                <th>班級</th>
+                                <th>年級</th>
+                                <th>進步率</th>
+                                <th>第一次 → 最後一次</th>
+                                <th>獎勵</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        container.innerHTML += card;
     });
 }
 

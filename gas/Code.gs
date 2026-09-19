@@ -9,6 +9,12 @@ const CLASS_SHEET = "班級清單";
 const GRADE_NAMES = ["一年級", "二年級", "三年級", "四年級", "五年級", "六年級"];
 const GRADE_NUMERALS = ["一", "二", "三", "四", "五", "六"];
 
+// 現場登記可選的抽測餐點類別
+const DISH_OPTIONS = ["主食", "主菜", "副菜", "蔬菜", "附餐"];
+
+// 設定檔中儲存現場登記密碼的項目名稱
+const PASSWORD_CONFIG_KEY = "現場紀錄密碼";
+
 function getAllClassDefinitions() {
   const classes = [];
   GRADE_NAMES.forEach((grade, i) => {
@@ -77,6 +83,7 @@ function initializeConfig(ss) {
     ["活動名稱", "光盤小超人・廚餘減量大作戰"],
     ["活動年度", "2024"],
     ["抽測總次數", "3"],
+    [PASSWORD_CONFIG_KEY, "請自行修改此密碼"],
     ["更新時間", new Date().toLocaleString("zh-TW")]
   ];
 
@@ -221,6 +228,20 @@ function getConfig() {
   return jsonOutput(config);
 }
 
+// ==================== 讀取設定檔中的單一設定值 ====================
+function getConfigValue(key) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(CONFIG_SHEET);
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === key) {
+      return data[i][1];
+    }
+  }
+  return null;
+}
+
 // ==================== 取得全校班級清單 ====================
 function getClasses() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -273,6 +294,10 @@ function doPost(e) {
     return jsonOutput({ success: false, error: "無法解析請求內容" });
   }
 
+  if (payload.action === "verifyPassword") {
+    return handleVerifyPassword(payload);
+  }
+
   if (payload.action === "addRecord") {
     return handleAddRecord(payload);
   }
@@ -280,15 +305,40 @@ function doPost(e) {
   return jsonOutput({ success: false, error: `不支援的 action: ${payload.action}` });
 }
 
+// ==================== 驗證現場登記密碼 ====================
+function handleVerifyPassword(payload) {
+  const correctPassword = getConfigValue(PASSWORD_CONFIG_KEY);
+
+  if (!correctPassword) {
+    return jsonOutput({ success: false, error: "尚未設定登記密碼，請聯絡系統管理者" });
+  }
+  if (payload.password !== correctPassword) {
+    return jsonOutput({ success: false, error: "密碼錯誤" });
+  }
+
+  return jsonOutput({ success: true });
+}
+
 // ==================== 新增紀錄（現場秤重登記用）====================
 function handleAddRecord(payload) {
-  const { date, className, grade, dish, people, waste } = payload;
+  const { date, className, grade, dish, people, waste, password } = payload;
+
+  const correctPassword = getConfigValue(PASSWORD_CONFIG_KEY);
+  if (!correctPassword) {
+    return jsonOutput({ success: false, error: "尚未設定登記密碼，請聯絡系統管理者" });
+  }
+  if (password !== correctPassword) {
+    return jsonOutput({ success: false, error: "密碼錯誤" });
+  }
 
   const peopleNum = Number(people);
   const wasteNum = Number(waste);
 
   if (!date || !className || !grade || !dish) {
     return jsonOutput({ success: false, error: "請填寫日期、班級、年級與抽測餐點" });
+  }
+  if (DISH_OPTIONS.indexOf(dish) === -1) {
+    return jsonOutput({ success: false, error: `抽測餐點需為：${DISH_OPTIONS.join("、")} 其中之一` });
   }
   if (!Number.isFinite(peopleNum) || peopleNum <= 0) {
     return jsonOutput({ success: false, error: "班級人數需為大於 0 的數字" });

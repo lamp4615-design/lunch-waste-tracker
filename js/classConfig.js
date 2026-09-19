@@ -39,3 +39,26 @@ function getClassesByGrade(grade) {
         className => classConfig[className].grade === grade
     );
 }
+
+// ========== 低／中／高年級分組配置 ==========
+const gradeToDivision = {
+    "一年級": "低年級",
+    "二年級": "低年級",
+    "三年級": "中年級",
+    "四年級": "中年級",
+    "五年級": "高年級",
+    "六年級": "高年級",
+};
+
+const DIVISION_ORDER = ["低年級", "中年級", "高年級"];
+
+const DIVISION_INFO = {
+    "低年級": { emoji: "🌱", color: "#4CAF50" },
+    "中年級": { emoji: "🌿", color: "#2196F3" },
+    "高年級": { emoji: "🌳", color: "#FF9800" },
+};
+
+// 取得年級所屬的低/中/高年級分組
+function getDivision(grade) {
+    return gradeToDivision[grade] || "未知";
+}

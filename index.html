@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>光盤小超人・廚餘減量大作戰</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -24,6 +27,7 @@
         <!-- Tab 導航 -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="leaderboard">🏆 進步排行榜</button>
+            <button class="tab-btn" data-tab="division-ranking">🎖️ 低中高年級排行</button>
             <button class="tab-btn" data-tab="progress-chart">📈 進步率圖表</button>
             <button class="tab-btn" data-tab="records">📊 詳細紀錄</button>
             <button class="tab-btn" data-tab="record-form">✏️ 現場紀錄</button>
@@ -34,21 +38,30 @@
         <div id="leaderboard" class="tab-content active">
             <div class="leaderboard">
                 <h2>🎯 「惜食進步王」排行</h2>
-                <table id="statsTable">
-                    <thead>
-                        <tr>
-                            <th>排名</th>
-                            <th>班級</th>
-                            <th>年級</th>
-                            <th>進步率</th>
-                            <th>第一次 → 最後一次</th>
-                            <th>狀態</th>
-                        </tr>
-                    </thead>
-                    <tbody id="statsBody">
-                        <tr><td colspan="6" class="loading">⏳ 載入中...</td></tr>
-                    </tbody>
-                </table>
+                <div class="table-wrapper">
+                    <table id="statsTable">
+                        <thead>
+                            <tr>
+                                <th>排名</th>
+                                <th>班級</th>
+                                <th>年級</th>
+                                <th>進步率</th>
+                                <th>第一次 → 最後一次</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statsBody">
+                            <tr><td colspan="6" class="loading">⏳ 載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: 低中高年級排行 -->
+        <div id="division-ranking" class="tab-content">
+            <div id="divisionContainer">
+                <p class="loading">⏳ 載入中...</p>
             </div>
         </div>
 
@@ -82,27 +95,44 @@
                 </select>
             </div>
 
-            <table id="recordsTable">
-                <thead>
-                    <tr>
-                        <th>日期</th>
-                        <th>班級</th>
-                        <th>年級</th>
-                        <th>抽測餐點</th>
-                        <th>班級人數</th>
-                        <th>廚餘重量 (g)</th>
-                        <th>每人平均 (g)</th>
-                    </tr>
-                </thead>
-                <tbody id="recordsBody">
-                    <tr><td colspan="7" class="loading">⏳ 載入中...</td></tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table id="recordsTable">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>班級</th>
+                            <th>年級</th>
+                            <th>抽測餐點</th>
+                            <th>班級人數</th>
+                            <th>廚餘重量 (g)</th>
+                            <th>每人平均 (g)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsBody">
+                        <tr><td colspan="7" class="loading">⏳ 載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Tab: 現場紀錄 -->
         <div id="record-form" class="tab-content">
-            <div class="record-card">
+            <!-- 密碼鎖畫面 -->
+            <div class="record-card lock-card" id="recordLock">
+                <h2>🔒 現場登記驗證</h2>
+                <p class="lock-hint">請輸入現場登記密碼（由承辦老師提供）</p>
+                <form id="lockForm">
+                    <div class="form-row">
+                        <label for="inputPassword">登記密碼</label>
+                        <input type="password" id="inputPassword" placeholder="請輸入密碼" required autocomplete="off">
+                    </div>
+                    <button type="submit" class="submit-btn" id="unlockBtn">解鎖登記表單</button>
+                </form>
+                <div id="lockMessage" class="form-message"></div>
+            </div>
+
+            <!-- 秤重登記表單（驗證通過後才顯示） -->
+            <div class="record-card" id="recordFormWrapper" style="display: none;">
                 <h2>✏️ 現場秤重登記</h2>
                 <form id="wasteForm">
                     <div class="form-row">
@@ -126,7 +156,14 @@
 
                     <div class="form-row">
                         <label for="inputDish">抽測餐點</label>
-                        <input type="text" id="inputDish" placeholder="例如：白飯、青菜" required>
+                        <select id="inputDish" required>
+                            <option value="" disabled selected>請選擇餐點類別</option>
+                            <option value="主食">主食</option>
+                            <option value="主菜">主菜</option>
+                            <option value="副菜">副菜</option>
+                            <option value="蔬菜">蔬菜</option>
+                            <option value="附餐">附餐</option>
+                        </select>
                     </div>
 
                     <div class="form-row">
@@ -149,25 +186,12 @@
 
         <!-- Tab 4: 活動說明 -->
         <div id="guide" class="tab-content">
-            <div class="guide-card">
-                <h2>🦸 光盤小超人的三個任務</h2>
-                <div class="mission-grid">
-                    <div class="mission-card">
-                        <div class="mission-number">①</div>
-                        <h3>吃多少，拿多少</h3>
-                        <p>先估計自己的食量，不要貪心拿太多！</p>
-                    </div>
-                    <div class="mission-card">
-                        <div class="mission-number">②</div>
-                        <h3>不夠吃，再來添</h3>
-                        <p>少了再加，比一次拿太多浪費更聰明。</p>
-                    </div>
-                    <div class="mission-card">
-                        <div class="mission-number">③</div>
-                        <h3>珍惜食物，不浪費</h3>
-                        <p>能吃完的食物不要丟棄，愛護地球！</p>
-                    </div>
-                </div>
+            <div class="guide-card poster-card">
+                <img src="images/poster-cafeteria.png" alt="光盤小超人・廚餘減量大作戰 宣傳海報" class="guide-poster">
+            </div>
+
+            <div class="guide-card poster-card">
+                <img src="images/poster-tasks.png" alt="廚餘秤重四步驟與惜食進步王說明海報" class="guide-poster">
             </div>
 
             <div class="guide-card">
