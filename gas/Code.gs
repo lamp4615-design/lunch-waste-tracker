@@ -366,11 +366,67 @@ function addRecord(date, className, grade, dish, people, waste) {
   const avgWaste = Math.round((waste / people) * 100) / 100;
 
   sheet.appendRow([date, className, grade, dish, people, waste, avgWaste, "已完成"]);
+  recalculateStats(ss);
 
   return {
     日期: date, 班級: className, 年級: grade, 抽測餐點: dish,
     班級人數: people, "廚餘重量(g)": waste, "每人平均(g)": avgWaste, 狀態: "已完成"
   };
+}
+
+// ==================== 依秤重紀錄重新計算班級統計（每次新增紀錄後自動執行）====================
+function recalculateStats(ss) {
+  ss = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
+  const recordsSheet = ss.getSheetByName(RECORDS_SHEET);
+  const data = recordsSheet.getDataRange().getValues();
+  const headers = data[0];
+
+  const idxDate = headers.indexOf("日期");
+  const idxClass = headers.indexOf("班級");
+  const idxGrade = headers.indexOf("年級");
+  const idxAvg = headers.indexOf("每人平均(g)");
+
+  const grouped = {};
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const className = row[idxClass];
+    if (!className) continue;
+
+    if (!grouped[className]) {
+      grouped[className] = { grade: row[idxGrade], entries: [] };
+    }
+    grouped[className].entries.push({ date: row[idxDate], avg: Number(row[idxAvg]) });
+  }
+
+  const statsRows = Object.keys(grouped).map(className => {
+    const group = grouped[className];
+    const sorted = group.entries.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+    const first = sorted[0].avg;
+    const last = sorted[sorted.length - 1].avg;
+    const progress = first > 0 ? Math.round(((first - last) / first) * 1000) / 10 : 0;
+
+    return {
+      className: className,
+      grade: group.grade,
+      first: first,
+      last: last,
+      progress: progress,
+      count: sorted.length
+    };
+  });
+
+  statsRows.sort((a, b) => b.progress - a.progress);
+  statsRows.forEach((row, index) => { row.rank = index + 1; });
+
+  const statsSheet = ss.getSheetByName(STATS_SHEET);
+  const existingRows = statsSheet.getMaxRows() - 1;
+  if (existingRows > 0) {
+    statsSheet.getRange(2, 1, existingRows, 7).clearContent();
+  }
+  if (statsRows.length > 0) {
+    const values = statsRows.map(r => [r.className, r.grade, r.first, r.last, r.progress, r.rank, r.count]);
+    statsSheet.getRange(2, 1, values.length, 7).setValues(values);
+  }
 }
 
 // ==================== 共用：JSON 輸出 ====================
