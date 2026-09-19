@@ -305,17 +305,24 @@ function doPost(e) {
   return jsonOutput({ success: false, error: `不支援的 action: ${payload.action}` });
 }
 
+// ==================== 密碼比對（統一轉成文字，避免試算表存成數字時比對失敗）====================
+function isPasswordCorrect(inputPassword) {
+  const correctPassword = getConfigValue(PASSWORD_CONFIG_KEY);
+  if (correctPassword === null || correctPassword === "") {
+    return { ok: false, error: "尚未設定登記密碼，請聯絡系統管理者" };
+  }
+  if (String(inputPassword).trim() !== String(correctPassword).trim()) {
+    return { ok: false, error: "密碼錯誤" };
+  }
+  return { ok: true };
+}
+
 // ==================== 驗證現場登記密碼 ====================
 function handleVerifyPassword(payload) {
-  const correctPassword = getConfigValue(PASSWORD_CONFIG_KEY);
-
-  if (!correctPassword) {
-    return jsonOutput({ success: false, error: "尚未設定登記密碼，請聯絡系統管理者" });
+  const result = isPasswordCorrect(payload.password);
+  if (!result.ok) {
+    return jsonOutput({ success: false, error: result.error });
   }
-  if (payload.password !== correctPassword) {
-    return jsonOutput({ success: false, error: "密碼錯誤" });
-  }
-
   return jsonOutput({ success: true });
 }
 
@@ -323,12 +330,9 @@ function handleVerifyPassword(payload) {
 function handleAddRecord(payload) {
   const { date, className, grade, dish, people, waste, password } = payload;
 
-  const correctPassword = getConfigValue(PASSWORD_CONFIG_KEY);
-  if (!correctPassword) {
-    return jsonOutput({ success: false, error: "尚未設定登記密碼，請聯絡系統管理者" });
-  }
-  if (password !== correctPassword) {
-    return jsonOutput({ success: false, error: "密碼錯誤" });
+  const passwordCheck = isPasswordCorrect(password);
+  if (!passwordCheck.ok) {
+    return jsonOutput({ success: false, error: passwordCheck.error });
   }
 
   const peopleNum = Number(people);
